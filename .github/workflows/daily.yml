@@ -2,7 +2,7 @@ name: Daily Itch Jam Scraper
 
 on:
     schedule:
-        - cron: "0 0 * * *" # Runs daily at midnight UTC
+        - cron: "15 0 * * *" # Runs daily at midnight UTC
     workflow_dispatch: # Allow manual run from GitHub UI
 
 jobs:
