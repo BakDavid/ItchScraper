@@ -14,13 +14,18 @@ TODAY = datetime.date.today().isoformat()
 FILENAME = f"{DATA_DIR}/{TODAY}.json"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; itch-scraper-bot/1.0)"
+    "User-Agent": "Mozilla/5.0 (compatible; ItchScraperBot/1.0; +https://github.com/BakDavid/ItchScraper)"
 }
 
 def fetch_jam_links():
     print("Fetching jam links from HTML blocks...")
     url = "https://itch.io/jams"
     response = requests.get(url, headers=HEADERS)
+    print(f"[DEBUG] Status code for /jams page: {response.status_code}")
+    print(f"[DEBUG] Length of response: {len(response.text)}")
+
+    # Optional: dump a small preview
+    print("[DEBUG] HTML preview:", response.text[:500])
 
     soup = BeautifulSoup(response.text, "html.parser")
     jam_cells = soup.select("div.jam_cell")
