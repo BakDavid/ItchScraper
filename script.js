@@ -26,13 +26,13 @@ function createCard(jam) {
 }
 
 async function loadAllJams() {
-    const index = await getJSON("../data/index.json"); // Adjust path as needed
+    const index = await getJSON("./data/index.json"); // Adjust path as needed
     const allJams = [];
     const seen = new Set();
 
     for (const file of index) {
         try {
-            const jams = await getJSON(`../data/${file}`);
+            const jams = await getJSON(`./data/${file}`);
             for (const jam of jams) {
                 if (!seen.has(jam.url)) {
                     seen.add(jam.url);
