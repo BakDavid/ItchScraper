@@ -17,54 +17,65 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; ItchScraperBot/1.0; +https://github.com/BakDavid/ItchScraper)"
 }
 
-def fetch_jam_links():
+def fetch_jam_links(max_retries=5, delay=60):
     print("Fetching jam links from HTML blocks...")
     url = "https://itch.io/jams"
-    response = requests.get(url, headers=HEADERS)
-    print(f"[DEBUG] Status code for /jams page: {response.status_code}")
-    print(f"[DEBUG] Length of response: {len(response.text)}")
 
-    # Optional: dump a small preview
-    print("[DEBUG] HTML preview:", response.text[:500])
+    for attempt in range(1, max_retries + 1):
+        response = requests.get(url, headers=HEADERS)
+        status = response.status_code
+        print(f"[DEBUG] Attempt {attempt}: Status code = {status}")
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    jam_cells = soup.select("div.jam_cell")
+        if status == 200:
+            soup = BeautifulSoup(response.text, "html.parser")
+            jam_cells = soup.select("div.jam_cell")
 
-    jam_links = []
+            if not jam_cells:
+                print("[DEBUG] No jam cells found in HTML.")
+                return []
 
-    for cell in jam_cells:
-        anchor = cell.select_one("a[href]")
-        joined_text = cell.select_one(".joined_count")
+            jam_links = []
+            for cell in jam_cells:
+                anchor = cell.select_one("a[href]")
+                joined_text = cell.select_one(".joined_count")
 
-        if not anchor:
-            continue
+                if not anchor:
+                    continue
 
-        name = anchor.get_text(strip=True)
-        relative_url = anchor["href"]
-        full_url = BASE_URL + relative_url
+                name = anchor.get_text(strip=True)
+                relative_url = anchor["href"]
+                full_url = BASE_URL + relative_url
 
-        # Pull out number of joined users, if available
-        joined = None
-        if joined_text:
-            match = re.search(r"(\d+)", joined_text.get_text())
-            if match:
-                joined = int(match.group(1))
+                joined = None
+                if joined_text:
+                    match = re.search(r"(\d+)", joined_text.get_text())
+                    if match:
+                        joined = int(match.group(1))
 
-        # Early prize detection from title (optional optimization)
-        has_prize_in_title = any(k in name.lower() for k in PRIZE_KEYWORDS)
-        # You can skip these early if desired:
-        if not has_prize_in_title:
-            continue
+                has_prize_in_title = any(k in name.lower() for k in PRIZE_KEYWORDS)
+                if not has_prize_in_title:
+                    continue
 
-        jam_links.append({
-            "name": name,
-            "url": full_url,
-            "joined": joined,
-            "prize_in_title": has_prize_in_title
-        })
+                jam_links.append({
+                    "name": name,
+                    "url": full_url,
+                    "joined": joined,
+                    "prize_in_title": has_prize_in_title
+                })
 
-    print(f"Found {len(jam_links)} jams.")
-    return jam_links
+            print(f"Found {len(jam_links)} jams.")
+            return jam_links
+
+        elif status == 429:
+            print(f"[WARN] Got 429 Too Many Requests. Waiting {delay} seconds before retrying...")
+            time.sleep(delay)
+
+        else:
+            print(f"[ERROR] Unexpected response (status {status}). Retrying after short wait...")
+            time.sleep(10)
+
+    print("[ERROR] Failed to fetch jam links after multiple retries.")
+    return []
 
 def check_for_prize(jam_url):
     try:
