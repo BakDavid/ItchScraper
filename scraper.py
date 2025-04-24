@@ -135,8 +135,15 @@ def archive_old_files():
             except ValueError:
                 continue
 
+def generate_data_index():
+    json_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".json")]
+    with open(os.path.join(DATA_DIR, "index.json"), "w") as f:
+        json.dump(json_files, f, indent=2)
+    print("Generated data/index.json")
+
 if __name__ == "__main__":
     print(f"Running Itch.io Jam Scraper for {TODAY}")
     jams = fetch_jams()
     save_data(jams)
     archive_old_files()
+    generate_data_index()
