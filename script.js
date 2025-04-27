@@ -12,21 +12,48 @@ function stringToGradient(str) {
     }, 70%, 60%))`;
 }
 
+function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+}
+
 function createCard(jam) {
     const card = document.createElement("a");
     card.className = "jam-card";
     card.href = jam.url;
     card.target = "_blank";
     card.style.background = stringToGradient(jam.name);
+
+    const viewedData = JSON.parse(localStorage.getItem("viewedJams") || "{}");
+    const viewed = viewedData[jam.url];
+
     card.innerHTML = `
       <div class="jam-title">${jam.name}</div>
-      <div class="jam-meta">👥 Joined: ${jam.joined ?? "?"}</div>
+      <div class="jam-meta">
+        👥 Joined: ${jam.joined ?? "?"}<br/>
+        ${viewed ? `👀 Viewed: ${formatDate(viewed)}` : ""}
+      </div>
     `;
+
+    if (!viewed) {
+        card.classList.add("new-jam"); // 👈 Add special class if not viewed
+    }
+
+    card.addEventListener("click", () => {
+        const updatedViewed = JSON.parse(
+            localStorage.getItem("viewedJams") || "{}"
+        );
+        updatedViewed[jam.url] = Date.now();
+        localStorage.setItem("viewedJams", JSON.stringify(updatedViewed));
+        // Optional: Refresh page to immediately update visuals after click
+        setTimeout(() => location.reload(), 100);
+    });
+
     return card;
 }
 
 async function loadAllJams() {
-    const index = await getJSON("./data/index.json"); // Adjust path as needed
+    const index = await getJSON("./data/index.json");
     const allJams = [];
     const seen = new Set();
 
